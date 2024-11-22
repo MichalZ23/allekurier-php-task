@@ -3,6 +3,7 @@
 namespace App\Core\User\Domain;
 
 use App\Common\EventManager\EventsCollectorTrait;
+use App\Core\User\Domain\Exception\UserEmailInvalidException;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -32,6 +33,10 @@ class User
 
     public function __construct(string $email)
     {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new UserEmailInvalidException('Niepoprawny adres email.');
+        }
+
         $this->id = null;
         $this->email = $email;
     }
