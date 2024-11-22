@@ -32,7 +32,7 @@ class User
      */
     private bool $isActive = false;
 
-    public function __construct(string $email)
+    public function __construct(string $email, bool $isActive = false)
     {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new UserEmailInvalidException('Niepoprawny adres email.');
@@ -40,6 +40,7 @@ class User
 
         $this->id = null;
         $this->email = $email;
+        $this->isActive = $isActive;
 
         $this->record(new UserCreatedEvent($this));
     }
