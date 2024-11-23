@@ -4,7 +4,7 @@ namespace App\Core\User\Application\Command\CreateUser;
 
 final class CreateUserCommand
 {
-    public function __construct(
-        public readonly string $email,
-    ) {}
+    public function __construct(public readonly string $email)
+    {
+    }
 }

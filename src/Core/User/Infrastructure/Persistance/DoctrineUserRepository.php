@@ -2,26 +2,25 @@
 
 namespace App\Core\User\Infrastructure\Persistance;
 
-use App\Core\User\Domain\Exception\UserNotFoundException;
+use App\Common\EventManager\EventsCollectorDispatcher;
 use App\Core\User\Domain\Repository\UserRepositoryInterface;
 use App\Core\User\Domain\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
-use Psr\EventDispatcher\EventDispatcherInterface;
 
 class DoctrineUserRepository implements UserRepositoryInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly EventsCollectorDispatcher $eventsCollectorDispatcher,
     ) {}
 
     /**
      * @throws NonUniqueResultException
      */
-    public function getByEmail(string $email): User
+    public function getByEmail(string $email): ?User
     {
-        $user = $this->entityManager->createQueryBuilder()
+        return $this->entityManager->createQueryBuilder()
             ->select('u')
             ->from(User::class, 'u')
             ->where('u.email = :user_email')
@@ -29,24 +28,12 @@ class DoctrineUserRepository implements UserRepositoryInterface
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
-
-        if (null === $user) {
-            throw new UserNotFoundException('Użytkownik nie istnieje');
-        }
-
-        return $user;
     }
 
     public function save(User $user): void
     {
         $this->entityManager->persist($user);
-
-        $events = $user->pullEvents();
-        foreach ($events as $event) {
-            $this->eventDispatcher->dispatch($event);
-        }
-
-        $this->entityManager->flush();
+        $this->eventsCollectorDispatcher->dispatchEntityEvents($user);
     }
 
     public function flush(): void
@@ -54,14 +41,13 @@ class DoctrineUserRepository implements UserRepositoryInterface
         $this->entityManager->flush();
     }
 
-    public function getUsersByActivityStatus(bool $isActive): array
+    public function getInactiveUsers(): array
     {
         return $this->entityManager->createQueryBuilder()
             ->select('u')
             ->from(User::class, 'u')
             ->where('u.isActive = :is_active')
-            ->setParameter('is_active', $isActive)
-            ->groupBy('u.email')
+            ->setParameter('is_active', false)
             ->getQuery()
             ->getResult();
     }

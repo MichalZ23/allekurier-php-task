@@ -2,6 +2,7 @@
 
 namespace App\Core\User\Domain;
 
+use App\Common\EventManager\EventsCollectedEntityInterface;
 use App\Common\EventManager\EventsCollectorTrait;
 use App\Core\User\Domain\Event\UserCreatedEvent;
 use App\Core\User\Domain\Exception\UserEmailInvalidException;
@@ -11,7 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Entity
  * @ORM\Table(name="users")
  */
-class User
+class User implements EventsCollectedEntityInterface
 {
     use EventsCollectorTrait;
 
@@ -23,7 +24,7 @@ class User
     private ?int $id;
 
     /**
-     * @ORM\Column(type="string", length=300, nullable=false)
+     * @ORM\Column(type="string", length=300, nullable=false, unique=true)
      */
     private string $email;
 

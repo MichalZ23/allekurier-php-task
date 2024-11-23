@@ -2,17 +2,17 @@
 
 namespace App\Core\Invoice\Infrastructure\Persistance;
 
+use App\Common\EventManager\EventsCollectorDispatcher;
 use App\Core\Invoice\Domain\Invoice;
 use App\Core\Invoice\Domain\Repository\InvoiceRepositoryInterface;
 use App\Core\Invoice\Domain\Status\InvoiceStatus;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\EventDispatcher\EventDispatcherInterface;
 
 class DoctrineInvoiceRepository implements InvoiceRepositoryInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventsCollectorDispatcher $eventsCollectorDispatcher
     ) {}
 
     public function getInvoicesWithGreaterAmountAndStatus(int $amount, InvoiceStatus $invoiceStatus): array
@@ -34,11 +34,7 @@ class DoctrineInvoiceRepository implements InvoiceRepositoryInterface
     public function save(Invoice $invoice): void
     {
         $this->entityManager->persist($invoice);
-
-        $events = $invoice->pullEvents();
-        foreach ($events as $event) {
-            $this->eventDispatcher->dispatch($event);
-        }
+        $this->eventsCollectorDispatcher->dispatchEntityEvents($invoice);
     }
 
     public function flush(): void

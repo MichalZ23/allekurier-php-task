@@ -2,10 +2,12 @@
 
 namespace App\Core\Invoice\Domain;
 
+use App\Common\EventManager\EventsCollectedEntityInterface;
 use App\Common\EventManager\EventsCollectorTrait;
 use App\Core\Invoice\Domain\Event\InvoiceCanceledEvent;
 use App\Core\Invoice\Domain\Event\InvoiceCreatedEvent;
-use App\Core\Invoice\Domain\Exception\InvoiceException;
+use App\Core\Invoice\Domain\Exception\InvoiceAmountHasToBeGreaterThanZeroException;
+use App\Core\Invoice\Domain\Exception\InvoiceCannotBeCreatedForInactiveUserException;
 use App\Core\Invoice\Domain\Status\InvoiceStatus;
 use App\Core\User\Domain\User;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,7 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Entity
  * @ORM\Table(name="invoices")
  */
-class Invoice
+class Invoice implements EventsCollectedEntityInterface
 {
     use EventsCollectorTrait;
 
@@ -48,11 +50,13 @@ class Invoice
     public function __construct(User $user, int $amount)
     {
         if ($amount <= 0) {
-            throw new InvoiceException('Kwota faktury musi być większa od 0');
+            throw new InvoiceAmountHasToBeGreaterThanZeroException('Kwota faktury musi być większa od 0');
         }
 
         if (!$user->isActive()) {
-            throw new InvoiceException('Nie można stworzyć faktury dla nieaktywnego użytkownika');
+            throw new InvoiceCannotBeCreatedForInactiveUserException(
+                'Nie można stworzyć faktury dla nieaktywnego użytkownika',
+            );
         }
 
         $this->id = null;

@@ -2,7 +2,7 @@
 
 namespace App\Tests\Unit\Core\User\Infrastructure\Persistence;
 
-use App\Core\User\Domain\Event\UserCreatedEvent;
+use App\Common\EventManager\EventsCollectorDispatcher;
 use App\Core\User\Domain\User;
 use App\Core\User\Infrastructure\Persistance\DoctrineUserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -13,8 +13,9 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 final class DoctrineUserRepositoryTest extends TestCase
 {
     private EntityManagerInterface|MockObject $entityManager;
-    private EventDispatcherInterface|MockObject $eventDispatcher;
+    private EventDispatcherInterface|MockObject $eventCollectorDispatcher;
     private DoctrineUserRepository $userRepository;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -23,8 +24,8 @@ final class DoctrineUserRepositoryTest extends TestCase
             $this->entityManager = $this->createMock(
                 EntityManagerInterface::class
             ),
-            $this->eventDispatcher = $this->createMock(
-                EventDispatcherInterface::class
+            $this->eventCollectorDispatcher = $this->createMock(
+                EventsCollectorDispatcher::class
             )
         );
     }
@@ -37,12 +38,9 @@ final class DoctrineUserRepositoryTest extends TestCase
         $this->entityManager->expects(self::once())
             ->method('persist');
 
-        $this->eventDispatcher->expects(self::once())
-            ->method('dispatch')
-            ->with(self::isInstanceOf(UserCreatedEvent::class));
-
-        $this->entityManager->expects(self::once())
-            ->method('flush');
+        $this->eventCollectorDispatcher->expects(self::once())
+            ->method('dispatchEntityEvents')
+            ->with(self::isInstanceOf(User::class));
 
         $this->userRepository->save($user);
     }

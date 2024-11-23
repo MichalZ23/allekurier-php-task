@@ -25,10 +25,10 @@ final class GetInactiveUsersEmails extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $users = $this->bus->dispatch(new (GetInactiveUsersEmailsQuery::class));
+        $inactiveUsers = $this->bus->dispatch(new (GetInactiveUsersEmailsQuery::class));
 
         /** @var UserDTO $user */
-        foreach ($users as $user) {
+        foreach ($inactiveUsers as $user) {
             $output->writeln($user->email);
         }
 

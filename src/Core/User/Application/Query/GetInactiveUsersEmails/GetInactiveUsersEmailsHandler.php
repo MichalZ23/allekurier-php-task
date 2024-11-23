@@ -10,20 +10,20 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final class GetInactiveUsersEmailsHandler
 {
-    public function __construct(
-        private readonly UserRepositoryInterface $userRepository
-    ) {}
+    public function __construct(private readonly UserRepositoryInterface $userRepository)
+    {
+    }
 
     /**
      * @return UserDTO[]
      */
     public function __invoke(GetInactiveUsersEmailsQuery $query): array
     {
-        $users = $this->userRepository->getUsersByActivityStatus(false);
+        $inactiveUsers = $this->userRepository->getInactiveUsers();
 
         return array_map(
             static fn(User $user): UserDTO => new UserDTO($user->getEmail()),
-            $users,
+            $inactiveUsers,
         );
     }
 }

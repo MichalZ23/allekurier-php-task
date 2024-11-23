@@ -4,7 +4,8 @@ namespace App\Tests\Unit\Core\Invoice\Application\Command\CreateInvoice;
 
 use App\Core\Invoice\Application\Command\CreateInvoice\CreateInvoiceCommand;
 use App\Core\Invoice\Application\Command\CreateInvoice\CreateInvoiceHandler;
-use App\Core\Invoice\Domain\Exception\InvoiceException;
+use App\Core\Invoice\Domain\Exception\InvoiceAmountHasToBeGreaterThanZeroException;
+use App\Core\Invoice\Domain\Exception\InvoiceCannotBeCreatedForInactiveUserException;
 use App\Core\Invoice\Domain\Invoice;
 use App\Core\Invoice\Domain\Repository\InvoiceRepositoryInterface;
 use App\Core\User\Domain\Exception\UserNotFoundException;
@@ -63,22 +64,25 @@ class CreateInvoiceHandlerTest extends TestCase
         $this->expectException(UserNotFoundException::class);
 
         $this->userRepository->expects(self::once())
-            ->method('getByEmail')
-            ->willThrowException(new UserNotFoundException());
+            ->method('getByEmail');
 
         $this->handler->__invoke((new CreateInvoiceCommand('test@test.pl', 12500)));
     }
 
     public function test_handle_invoice_invalid_amount(): void
     {
-        $this->expectException(InvoiceException::class);
+        $this->expectException(InvoiceAmountHasToBeGreaterThanZeroException::class);
+
+        $user = $this->createMock(User::class);
+        $this->userRepository->method('getByEmail')
+            ->willReturn($user);
 
         $this->handler->__invoke((new CreateInvoiceCommand('test@test.pl', -5)));
     }
 
     public function test_handle_user_not_active(): void
     {
-        $this->expectException(InvoiceException::class);
+        $this->expectException(InvoiceCannotBeCreatedForInactiveUserException::class);
 
         $user = $this->createMock(User::class);
         $user->method('isActive')->willReturn(false);
